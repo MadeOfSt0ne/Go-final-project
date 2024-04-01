@@ -1,9 +1,10 @@
 module go_final_project
 
-go 1.21.4
+go 1.22.1
 
 require (
 	github.com/jmoiron/sqlx v1.3.5
+	github.com/lpernett/godotenv v0.0.0-20230527005122-0de1d4c5ef5e
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/stretchr/testify v1.9.0
 )

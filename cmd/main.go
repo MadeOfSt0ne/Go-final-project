@@ -20,16 +20,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := http.NewServeMux()
-	//mux.Handle("/", http.StripPrefix("/web", http.FileServer(http.Dir(webDir))))
-	mux.Handle("/", http.FileServer(http.Dir(webDir)))
-
 	var port string
 	port, ok := os.LookupEnv(portName)
 	if !ok {
 		slog.Info("can't find port in .env", "port", portName)
 		port = ":7540"
 	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(webDir)))
 
 	err = http.ListenAndServe(port, mux)
 	if err != nil {
