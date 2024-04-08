@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"go-final-project/internal/api"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 
@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	webDir   = "../web/"
 	portName = "TODO_PORT"
 )
 
@@ -26,20 +25,13 @@ func main() {
 		slog.Info("can't find port in .env.", "port", portName)
 		port = ":7540"
 	}
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(webDir)))
-
-	err := http.ListenAndServe(port, mux)
-	if err != nil {
-		slog.Error("failed to listen and serve.", "err", err)
-		os.Exit(1)
-	}
+	api.StartServer(port)
 }
 
 func loadEnv() {
-	err := godotenv.Load("../.env")
+	err := godotenv.Load(".env")
 	if err != nil {
-		slog.Error("can't load .env file.")
+		slog.Error("failed to load .env file.", "err", err)
 		os.Exit(1)
 	}
 }
@@ -57,25 +49,27 @@ func connectDB() {
 		install = true
 	}
 
-	db, err := sql.Open("sqlite3", "scheduler.db")
+	db, err := sql.Open("sqlite", "../scheduler.db")
 	if err != nil {
 		slog.Error("failed to connect db.", "err", err)
 		os.Exit(1)
 	}
+	defer db.Close()
 
 	create := `
 	    CREATE TABLE scheduler(
-			id INTEGER NOT NULL PRIMARY KEY,
-			date TEXT(8),
-			title TEXT,
-			comment TEXT,
-			repeat TEXT(128),
+			id INTEGER PRIMARY KEY,
+			date VARCHAR(8),
+			title VARCHAR,
+			comment VARCHAR,
+			repeat VARCHAR(128)
 		);
-		CREATE INDEX date_index ON scheduler (column date);`
+		CREATE INDEX date_idx ON scheduler (date);
+		`
 
-	if install {
+	if !install {
 		if _, err := db.Exec(create); err != nil {
-			slog.Error("failed to create db", "err", err)
+			slog.Error("failed to create db.", "err", err)
 			os.Exit(1)
 		}
 	}

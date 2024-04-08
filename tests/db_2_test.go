@@ -1,13 +1,14 @@
 package tests
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	_ "modernc.org/sqlite"
 )
 
 type Task struct {
@@ -29,7 +30,7 @@ func openDB(t *testing.T) *sqlx.DB {
 	if len(envFile) > 0 {
 		dbfile = envFile
 	}
-	db, err := sqlx.Connect("sqlite3", dbfile)
+	db, err := sqlx.Connect("sqlite", dbfile)
 	assert.NoError(t, err)
 	return db
 }
@@ -48,9 +49,13 @@ func TestDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	id, err := res.LastInsertId()
+	if err != nil {
+		fmt.Println("err =", err)
+	}
 
 	var task Task
-	err = db.Get(&task, `SELECT * FROM scheduler WHERE id=?`, id)
+	err = db.Get(&task, `SELECT * FROM scheduler WHERE id = ?`, id)
+	fmt.Println("before =", before, "id =", id, "task =", task)
 	assert.NoError(t, err)
 	assert.Equal(t, id, task.ID)
 	assert.Equal(t, `Todo`, task.Title)
