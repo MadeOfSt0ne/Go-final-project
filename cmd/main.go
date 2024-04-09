@@ -17,7 +17,7 @@ const (
 
 func main() {
 	loadEnv()
-	connectDB()
+	db := connectDB()
 
 	var port string
 	port, ok := os.LookupEnv(portName)
@@ -25,7 +25,9 @@ func main() {
 		slog.Info("can't find port in .env.", "port", portName)
 		port = ":7540"
 	}
-	api.StartServer(port)
+	server := api.NewAPIServer(port, db)
+	server.Run()
+	defer db.Close()
 }
 
 func loadEnv() {
@@ -36,7 +38,7 @@ func loadEnv() {
 	}
 }
 
-func connectDB() {
+func connectDB() *sql.DB {
 	appPath, err := os.Executable()
 	if err != nil {
 		slog.Error("failed to return the path.", "err", err)
@@ -49,12 +51,11 @@ func connectDB() {
 		install = true
 	}
 
-	db, err := sql.Open("sqlite", "../scheduler.db")
+	db, err := sql.Open("sqlite", "scheduler.db")
 	if err != nil {
 		slog.Error("failed to connect db.", "err", err)
 		os.Exit(1)
 	}
-	defer db.Close()
 
 	create := `
 	    CREATE TABLE scheduler(
@@ -73,4 +74,5 @@ func connectDB() {
 			os.Exit(1)
 		}
 	}
+	return db
 }
