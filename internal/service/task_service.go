@@ -90,17 +90,39 @@ func (s TaskService) GetTasks() (map[string][]types.TaskDTO, error) {
 
 	tasksDTO := make([]types.TaskDTO, 0)
 	for _, t := range tasks {
-		dto := types.TaskDTO{
-			ID:      strconv.Itoa(int(t.ID)),
-			Title:   t.Title,
-			Date:    t.Date,
-			Comment: t.Comment,
-			Repeat:  t.Repeat,
-		}
+		dto := toTaskDto(t)
 		tasksDTO = append(tasksDTO, dto)
 	}
 
 	res := make(map[string][]types.TaskDTO)
 	res["tasks"] = tasksDTO
 	return res, nil
+}
+
+func (s TaskService) GetTaskById(taskId string) (types.TaskDTO, error) {
+	id, err := strconv.Atoi(taskId)
+	if err != nil {
+		return types.TaskDTO{}, fmt.Errorf("wrong format of task id: %v", taskId)
+	}
+	task, err := s.store.GetById(int64(id))
+	if err != nil {
+		slog.Error("repository returned error.", "err", err)
+		return types.TaskDTO{}, fmt.Errorf("failed to get tasks")
+	}
+	return toTaskDto(task), nil
+}
+
+func (s TaskService) UpdateTask(task types.Task) error {
+
+}
+
+func toTaskDto(t types.Task) types.TaskDTO {
+	dto := types.TaskDTO{
+		ID:      strconv.Itoa(int(t.ID)),
+		Title:   t.Title,
+		Date:    t.Date,
+		Comment: t.Comment,
+		Repeat:  t.Repeat,
+	}
+	return dto
 }

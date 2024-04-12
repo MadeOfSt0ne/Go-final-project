@@ -56,3 +56,26 @@ func (r *TaskRepository) GetAllTasks() ([]types.Task, error) {
 	}
 	return res, nil
 }
+
+func (r *TaskRepository) GetById(id int64) (types.Task, error) {
+	row := sq.Select("*").
+		From("scheduler").
+		Where(sq.Eq{"id": id}).
+		RunWith(r.db).QueryRow()
+	t := types.Task{}
+	err := row.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+	return t, err
+}
+
+func (r *TaskRepository) UpdateTask(task types.Task) error {
+	_, err := sq.Update("scheduler").
+		SetMap(map[string]interface{}{
+			"date":    task.Date,
+			"title":   task.Title,
+			"comment": task.Comment,
+			"repeat":  task.Repeat,
+		}).
+		Where(sq.Eq{"id": task.ID}).
+		RunWith(r.db).Exec()
+	return err
+}

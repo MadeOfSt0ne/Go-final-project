@@ -23,6 +23,8 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/nextdate", h.handleNextDate)
 	mux.HandleFunc("POST /api/task", h.handlePostTask)
 	mux.HandleFunc("GET /api/tasks", h.handleGetTasks)
+	mux.HandleFunc("GET /api/task", h.handleGetTaskById)
+	mux.HandleFunc("PUT /api/task", h.handleUpdateTask)
 }
 
 func (h *Handler) handleNextDate(w http.ResponseWriter, r *http.Request) {
@@ -121,5 +123,48 @@ func (h *Handler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("failed to write the response.", "err", err)
 		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+	}
+}
+
+func (h *Handler) handleGetTaskById(w http.ResponseWriter, r *http.Request) {
+	taskId := r.FormValue("id")
+	task, err := h.srv.GetTaskById(taskId)
+	if err != nil {
+		slog.Error("failed to get task by id.", "id", taskId, "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := json.Marshal(task)
+	if err != nil {
+		slog.Error("failed to marshal task.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(resp)
+	if err != nil {
+		slog.Error("failed to write the response.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+	}
+}
+
+func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
+	var task types.Task
+	var buf bytes.Buffer
+
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		slog.Error("failed to read body.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
+		slog.Error("failed to unmarshal body.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusBadRequest)
+		return
 	}
 }

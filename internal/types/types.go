@@ -19,6 +19,8 @@ type TaskDTO struct {
 type TaskStore interface {
 	Add(task Task) (int64, error)
 	GetAllTasks() ([]Task, error)
+	GetById(id int64) (Task, error)
+	UpdateTask(task Task) error
 }
 
 type ResponseOK struct {
