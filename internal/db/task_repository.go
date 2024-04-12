@@ -30,3 +30,29 @@ func (r *TaskRepository) Add(task types.Task) (int64, error) {
 	}
 	return int64(id), nil
 }
+
+func (r *TaskRepository) GetAllTasks() ([]types.Task, error) {
+	rows, err := sq.Select("*").
+		From("scheduler").
+		OrderBy("date").
+		Limit(10).
+		RunWith(r.db).Query()
+	if err != nil {
+		return nil, fmt.Errorf("error getting tasks from db: %v", err)
+	}
+	defer rows.Close()
+
+	var res []types.Task
+	for rows.Next() {
+		t := types.Task{}
+		err := rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+		res = append(res, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return res, nil
+}

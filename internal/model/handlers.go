@@ -22,6 +22,7 @@ func NewHandler(srv service.TaskService) *Handler {
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/nextdate", h.handleNextDate)
 	mux.HandleFunc("POST /api/task", h.handlePostTask)
+	mux.HandleFunc("GET /api/tasks", h.handleGetTasks)
 }
 
 func (h *Handler) handleNextDate(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +87,30 @@ func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 	resp, err := json.Marshal(types.ResponseOK{ID: stringId})
 	if err != nil {
 		slog.Error("failed to marshal id.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(resp)
+	if err != nil {
+		slog.Error("failed to write the response.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+	}
+}
+
+func (h *Handler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
+	tasks, err := h.srv.GetTasks()
+	if err != nil {
+		slog.Error("failed to get tasks.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := json.Marshal(tasks)
+	if err != nil {
+		slog.Error("failed to marshal tasks.", "err", err)
 		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 		return
 	}

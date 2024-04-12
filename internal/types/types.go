@@ -8,8 +8,17 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
+type TaskDTO struct {
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
+}
+
 type TaskStore interface {
 	Add(task Task) (int64, error)
+	GetAllTasks() ([]Task, error)
 }
 
 type ResponseOK struct {

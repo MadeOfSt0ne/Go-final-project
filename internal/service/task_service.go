@@ -77,3 +77,30 @@ func (s TaskService) AddNewTask(task types.Task) (int64, error) {
 	}
 	return id, nil
 }
+
+func (s TaskService) GetTasks() (map[string][]types.TaskDTO, error) {
+	tasks, err := s.store.GetAllTasks()
+	if err != nil {
+		slog.Error("repository returned error.", "err", err)
+		return nil, fmt.Errorf("failed to get tasks")
+	}
+	if tasks == nil {
+		tasks = make([]types.Task, 0)
+	}
+
+	tasksDTO := make([]types.TaskDTO, 0)
+	for _, t := range tasks {
+		dto := types.TaskDTO{
+			ID:      strconv.Itoa(int(t.ID)),
+			Title:   t.Title,
+			Date:    t.Date,
+			Comment: t.Comment,
+			Repeat:  t.Repeat,
+		}
+		tasksDTO = append(tasksDTO, dto)
+	}
+
+	res := make(map[string][]types.TaskDTO)
+	res["tasks"] = tasksDTO
+	return res, nil
+}
