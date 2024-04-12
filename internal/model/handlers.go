@@ -64,7 +64,7 @@ func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if task.Date != "today" {
+	if task.Date != "today" && task.Date != "" {
 		task.Date, err = h.srv.NextDate(time.Now().Format("20060102"), task.Date, task.Repeat)
 		if err != nil {
 			slog.Debug("failed to get next date.", "err", err)

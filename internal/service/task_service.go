@@ -25,10 +25,14 @@ func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error
 		return "", fmt.Errorf("wrong time format: %v", nowValue)
 	}
 
-	date, err := time.Parse("20060102", dateValue)
+	_, err = time.Parse("20060102", dateValue)
 	if err != nil {
 		slog.Error("failed to parse time.", "err", err)
 		return "", fmt.Errorf("wrong time format: %v", dateValue)
+	}
+
+	if len(repeat) == 0 {
+		return nowValue, nil
 	}
 
 	rule := strings.Split(repeat, " ")
@@ -45,18 +49,16 @@ func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error
 		if daysToAdd > 400 {
 			return "", fmt.Errorf("max amount of days is 400! Your value is %v", daysToAdd)
 		}
-		next = date.AddDate(0, 0, daysToAdd)
 		for next.Before(now) {
 			next = next.AddDate(0, 0, daysToAdd)
 		}
 	case "y":
-		next = date.AddDate(1, 0, 0)
 		for next.Before(now) {
 			next = next.AddDate(1, 0, 0)
 		}
-	case "w":
+	//case "w":
 
-	case "m":
+	//case "m":
 
 	default:
 		return "", fmt.Errorf("wrong format of repeat: %v", repeat)
