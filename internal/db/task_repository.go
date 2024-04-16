@@ -82,10 +82,27 @@ func (r *TaskRepository) UpdateTask(task types.Task) error {
 	}
 	nRows, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("update failed")
+		return fmt.Errorf("failed to get affected rows")
 	}
 	if nRows == 0 {
-		return fmt.Errorf("update failed")
+		return fmt.Errorf("no rows were updated")
+	}
+	return nil
+}
+
+func (r *TaskRepository) DeleteTask(id int64) error {
+	res, err := sq.Delete("scheduler").
+		Where(sq.Eq{"id": id}).
+		RunWith(r.db).Exec()
+	if err != nil {
+		return fmt.Errorf("delete failed")
+	}
+	nRows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows")
+	}
+	if nRows == 0 {
+		return fmt.Errorf("no rows were deleted")
 	}
 	return nil
 }

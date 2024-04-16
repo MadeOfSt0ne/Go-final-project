@@ -21,6 +21,7 @@ type TaskStore interface {
 	GetAllTasks() ([]Task, error)
 	GetById(id int64) (Task, error)
 	UpdateTask(task Task) error
+	DeleteTask(id int64) error
 }
 
 type ResponseOK struct {

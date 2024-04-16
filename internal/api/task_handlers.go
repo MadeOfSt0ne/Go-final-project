@@ -25,6 +25,8 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/tasks", h.handleGetTasks)
 	mux.HandleFunc("GET /api/task", h.handleGetTaskById)
 	mux.HandleFunc("PUT /api/task", h.handleUpdateTask)
+	mux.HandleFunc("DELETE /api/task", h.handleDeleteTask)
+	mux.HandleFunc("POST /api/task/done", h.handleTaskDone)
 }
 
 func (h *Handler) handleNextDate(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +173,32 @@ func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	err = h.srv.UpdateTask(task)
 	if err != nil {
 		slog.Error("failed to update task.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	w.Write([]byte(`{}`))
+}
+
+func (h *Handler) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
+	taskId := r.FormValue("id")
+	err := h.srv.DeleteTask(taskId)
+	if err != nil {
+		slog.Error("failed to delete task by id.", "id", taskId, "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	w.Write([]byte(`{}`))
+}
+
+func (h *Handler) handleTaskDone(w http.ResponseWriter, r *http.Request) {
+	taskId := r.FormValue("id")
+	err := h.srv.SetNewDate(taskId)
+	if err != nil {
+		slog.Error("failed to set task done by id.", "id", taskId, "err", err)
 		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 		return
 	}

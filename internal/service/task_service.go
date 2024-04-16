@@ -25,7 +25,7 @@ func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error
 		return "", fmt.Errorf("wrong time format: %v", nowValue)
 	}
 
-	_, err = time.Parse("20060102", dateValue)
+	date, err := time.Parse("20060102", dateValue)
 	if err != nil {
 		slog.Error("failed to parse time.", "err", err)
 		return "", fmt.Errorf("wrong time format: %v", dateValue)
@@ -49,10 +49,16 @@ func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error
 		if daysToAdd > 400 {
 			return "", fmt.Errorf("max amount of days is 400! Your value is %v", daysToAdd)
 		}
+
+		next = date.AddDate(0, 0, daysToAdd)
+
 		for next.Before(now) {
 			next = next.AddDate(0, 0, daysToAdd)
 		}
 	case "y":
+
+		next = date.AddDate(1, 0, 0)
+
 		for next.Before(now) {
 			next = next.AddDate(1, 0, 0)
 		}
@@ -144,6 +150,48 @@ func (s TaskService) UpdateTask(dto types.TaskDTO) error {
 	return err
 }
 
+func (s TaskService) DeleteTask(taskId string) error {
+	id, err := strconv.Atoi(taskId)
+	if err != nil {
+		return fmt.Errorf("wrong format of task id: %v", taskId)
+	}
+	err = s.store.DeleteTask(int64(id))
+	if err != nil {
+		slog.Error("repository returned error.", "err", err)
+		return fmt.Errorf("failed to delete task")
+	}
+	return nil
+}
+
+func (s TaskService) SetNewDate(taskId string) error {
+	id, err := strconv.Atoi(taskId)
+	if err != nil {
+		return fmt.Errorf("wrong format of task id: %v", taskId)
+	}
+	task, err := s.store.GetById(int64(id))
+	if err != nil {
+		slog.Error("repository returned error.", "err", err)
+		return fmt.Errorf("failed to get task")
+	}
+	if len(task.Repeat) == 0 {
+		err = s.store.DeleteTask(int64(id))
+		return err
+	} else {
+		next, err := s.SetNextDate(task.Date, task.Repeat)
+		if err != nil {
+			slog.Error("failed to get next date.", "err", err)
+			return err
+		}
+		task.Date = next
+		err = s.store.UpdateTask(task)
+		if err != nil {
+			slog.Error("failed to set next date.", "err", err)
+			return err
+		}
+	}
+	return nil
+}
+
 func toTaskDto(t types.Task) types.TaskDTO {
 	dto := types.TaskDTO{
 		ID:      strconv.Itoa(int(t.ID)),
@@ -153,4 +201,31 @@ func toTaskDto(t types.Task) types.TaskDTO {
 		Repeat:  t.Repeat,
 	}
 	return dto
+}
+
+func (s TaskService) SetNextDate(dateValue, repeat string) (string, error) {
+	date, err := time.Parse("20060102", dateValue)
+	if err != nil {
+		slog.Error("failed to parse time.", "err", err)
+		return "", fmt.Errorf("wrong time format: %v", dateValue)
+	}
+
+	rule := strings.Split(repeat, " ")
+	var next time.Time
+	switch rule[0] {
+	case "d":
+		daysToAdd, err := strconv.Atoi(rule[1])
+		if err != nil {
+			return "", fmt.Errorf("wrong format of repeat: %v", repeat)
+		}
+		if daysToAdd > 400 {
+			return "", fmt.Errorf("max amount of days is 400! Your value is %v", daysToAdd)
+		}
+		next = date.AddDate(0, 0, daysToAdd)
+	case "y":
+		next = date.AddDate(1, 0, 0)
+	default:
+		return "", fmt.Errorf("wrong format of repeat: %v", repeat)
+	}
+	return next.Format("20060102"), nil
 }
