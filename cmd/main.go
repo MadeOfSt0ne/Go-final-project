@@ -23,7 +23,7 @@ func main() {
 	port, ok := os.LookupEnv(portName)
 	if !ok {
 		slog.Info("can't find port in .env.", "port", portName)
-		port = ":7540"
+		port = ":7545"
 	}
 	server := api.NewAPIServer(port, db)
 	server.Run()
@@ -33,8 +33,7 @@ func main() {
 func loadEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
-		slog.Error("failed to load .env file.", "err", err)
-		os.Exit(1)
+		slog.Info("failed to load .env file.", "err", err)
 	}
 }
 
