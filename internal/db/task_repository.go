@@ -68,7 +68,7 @@ func (r *TaskRepository) GetById(id int64) (types.Task, error) {
 }
 
 func (r *TaskRepository) UpdateTask(task types.Task) error {
-	_, err := sq.Update("scheduler").
+	res, err := sq.Update("scheduler").
 		SetMap(map[string]interface{}{
 			"date":    task.Date,
 			"title":   task.Title,
@@ -77,5 +77,15 @@ func (r *TaskRepository) UpdateTask(task types.Task) error {
 		}).
 		Where(sq.Eq{"id": task.ID}).
 		RunWith(r.db).Exec()
-	return err
+	if err != nil {
+		return fmt.Errorf("update failed")
+	}
+	nRows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("update failed")
+	}
+	if nRows == 0 {
+		return fmt.Errorf("update failed")
+	}
+	return nil
 }

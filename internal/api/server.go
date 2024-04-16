@@ -3,7 +3,6 @@ package api
 import (
 	"database/sql"
 	"go-final-project/internal/db"
-	"go-final-project/internal/model"
 	"go-final-project/internal/service"
 	"log/slog"
 	"net/http"
@@ -31,7 +30,7 @@ func (s *APIServer) Run() {
 
 	taskStore := db.NewTaskRepository(s.db)
 	taskService := service.NewTaskService(taskStore)
-	taskHandler := model.NewHandler(taskService)
+	taskHandler := NewHandler(taskService)
 	taskHandler.RegisterRoutes(mux)
 
 	mux.Handle("/", http.FileServer(http.Dir(webDir)))

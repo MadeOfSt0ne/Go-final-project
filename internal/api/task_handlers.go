@@ -1,4 +1,4 @@
-package model
+package api
 
 import (
 	"bytes"
@@ -67,7 +67,7 @@ func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if task.Date != "today" && task.Date != "" {
+	if task.Date != "today" && task.Date != "" && task.Date != time.Now().Format("20060102") {
 		task.Date, err = h.srv.NextDate(time.Now().Format("20060102"), task.Date, task.Repeat)
 		if err != nil {
 			slog.Debug("failed to get next date.", "err", err)
@@ -152,7 +152,7 @@ func (h *Handler) handleGetTaskById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
-	var task types.Task
+	var task types.TaskDTO
 	var buf bytes.Buffer
 
 	_, err := buf.ReadFrom(r.Body)
@@ -167,4 +167,14 @@ func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusBadRequest)
 		return
 	}
+
+	err = h.srv.UpdateTask(task)
+	if err != nil {
+		slog.Error("failed to update task.", "err", err)
+		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	w.Write([]byte(`{}`))
 }

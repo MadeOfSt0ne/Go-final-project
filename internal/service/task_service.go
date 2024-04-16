@@ -112,8 +112,36 @@ func (s TaskService) GetTaskById(taskId string) (types.TaskDTO, error) {
 	return toTaskDto(task), nil
 }
 
-func (s TaskService) UpdateTask(task types.Task) error {
-
+func (s TaskService) UpdateTask(dto types.TaskDTO) error {
+	if dto.Date != "today" && dto.Date != "" {
+		next, err := s.NextDate(time.Now().Format("20060102"), dto.Date, dto.Repeat)
+		if err != nil {
+			slog.Error("failed to get next date.", "err", err)
+			return err
+		}
+		dto.Date = next
+	} else {
+		dto.Date = time.Now().Format("20060102")
+	}
+	if len(dto.Title) == 0 {
+		return fmt.Errorf("empty task title")
+	}
+	if len(dto.ID) == 0 {
+		return fmt.Errorf("empty task id")
+	}
+	id, err := strconv.Atoi(dto.ID)
+	if err != nil {
+		return fmt.Errorf("wrong format of task id: %v", dto.ID)
+	}
+	task := types.Task{
+		ID:      int64(id),
+		Date:    dto.Date,
+		Title:   dto.Title,
+		Comment: dto.Comment,
+		Repeat:  dto.Repeat,
+	}
+	err = s.store.UpdateTask(task)
+	return err
 }
 
 func toTaskDto(t types.Task) types.TaskDTO {
