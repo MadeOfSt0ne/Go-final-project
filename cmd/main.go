@@ -31,6 +31,7 @@ func main() {
 }
 
 func loadEnv() {
+	slog.Info("Loading environment")
 	err := godotenv.Load(".env")
 	if err != nil {
 		slog.Info("failed to load .env file.", "err", err)
@@ -38,6 +39,7 @@ func loadEnv() {
 }
 
 func connectDB() *sql.DB {
+	slog.Info("Connecting database")
 	appPath, err := os.Executable()
 	if err != nil {
 		slog.Error("failed to return the path.", "err", err)
@@ -67,7 +69,8 @@ func connectDB() *sql.DB {
 		CREATE INDEX date_idx ON scheduler (date);
 		`
 
-	if !install {
+	if install {
+		slog.Info("Creating db with script `create`")
 		if _, err := db.Exec(create); err != nil {
 			slog.Error("failed to create db.", "err", err)
 			os.Exit(1)

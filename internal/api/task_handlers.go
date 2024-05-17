@@ -20,6 +20,7 @@ func NewHandler(srv service.TaskService) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
+	slog.Info("Registering routes")
 	mux.HandleFunc("GET /api/nextdate", h.handleNextDate)
 	mux.HandleFunc("POST /api/task", h.handlePostTask)
 	mux.HandleFunc("GET /api/tasks", h.handleGetTasks)
@@ -30,29 +31,31 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 }
 
 func (h *Handler) handleNextDate(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle nextdate")
 	nowValue := r.FormValue("now")
 	dateValue := r.FormValue("date")
 	repeat := r.FormValue("repeat")
 
 	if len(repeat) == 0 {
-		slog.Debug("empty repeat.")
+		slog.Error("empty repeat.")
 		http.Error(w, `{"error":"empty repeat"}`, http.StatusBadRequest)
 		return
 	}
 
 	next, err := h.srv.NextDate(nowValue, dateValue, repeat)
 	if err != nil {
-		slog.Debug("failed to get next date.", "err", err)
+		slog.Error("failed to get next date.", "err", err)
 		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-type", "application-json; charset=UTF-8")
+	//w.Header().Set("Content-type", "application-json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(next))
 }
 
 func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle post new task")
 	var task types.Task
 	var buf bytes.Buffer
 
@@ -72,7 +75,7 @@ func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 	if task.Date != "today" && task.Date != "" && task.Date != time.Now().Format("20060102") {
 		task.Date, err = h.srv.NextDate(time.Now().Format("20060102"), task.Date, task.Repeat)
 		if err != nil {
-			slog.Debug("failed to get next date.", "err", err)
+			slog.Error("failed to get next date.", "err", err)
 			http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 			return
 		}
@@ -100,11 +103,12 @@ func (h *Handler) handlePostTask(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(resp)
 	if err != nil {
 		slog.Error("failed to write the response.", "err", err)
-		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		//http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 	}
 }
 
 func (h *Handler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle get all tasks")
 	tasks, err := h.srv.GetTasks()
 	if err != nil {
 		slog.Error("failed to get tasks.", "err", err)
@@ -124,11 +128,12 @@ func (h *Handler) handleGetTasks(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(resp)
 	if err != nil {
 		slog.Error("failed to write the response.", "err", err)
-		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		//http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 	}
 }
 
 func (h *Handler) handleGetTaskById(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle get task by id")
 	taskId := r.FormValue("id")
 	task, err := h.srv.GetTaskById(taskId)
 	if err != nil {
@@ -149,11 +154,12 @@ func (h *Handler) handleGetTaskById(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(resp)
 	if err != nil {
 		slog.Error("failed to write the response.", "err", err)
-		http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
+		//http.Error(w, `{"error":"oops, something went wrong"}`, http.StatusInternalServerError)
 	}
 }
 
 func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle update task")
 	var task types.TaskDTO
 	var buf bytes.Buffer
 
@@ -182,6 +188,7 @@ func (h *Handler) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle delete task by id")
 	taskId := r.FormValue("id")
 	err := h.srv.DeleteTask(taskId)
 	if err != nil {
@@ -195,6 +202,7 @@ func (h *Handler) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleTaskDone(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle set task status DONE")
 	taskId := r.FormValue("id")
 	err := h.srv.SetNewDate(taskId)
 	if err != nil {

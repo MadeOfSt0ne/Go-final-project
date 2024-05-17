@@ -19,6 +19,7 @@ func NewTaskService(store types.TaskStore) TaskService {
 }
 
 func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error) {
+	slog.Info("Processing next date with", "now", nowValue, "date", dateValue, "repeat", repeat)
 	now, err := time.Parse("20060102", nowValue)
 	if err != nil {
 		slog.Error("failed to parse time.", "err", err)
@@ -73,6 +74,7 @@ func (s TaskService) NextDate(nowValue, dateValue, repeat string) (string, error
 }
 
 func (s TaskService) AddNewTask(task types.Task) (int64, error) {
+	slog.Info("Adding new", "task", task)
 	if len(task.Title) == 0 {
 		return 0, fmt.Errorf("empty task title")
 	}
@@ -85,6 +87,7 @@ func (s TaskService) AddNewTask(task types.Task) (int64, error) {
 }
 
 func (s TaskService) GetTasks() (map[string][]types.TaskDTO, error) {
+	slog.Info("Getting tasks")
 	tasks, err := s.store.GetAllTasks()
 	if err != nil {
 		slog.Error("repository returned error.", "err", err)
@@ -106,6 +109,7 @@ func (s TaskService) GetTasks() (map[string][]types.TaskDTO, error) {
 }
 
 func (s TaskService) GetTaskById(taskId string) (types.TaskDTO, error) {
+	slog.Info("Getting task by", "id", taskId)
 	id, err := strconv.Atoi(taskId)
 	if err != nil {
 		return types.TaskDTO{}, fmt.Errorf("wrong format of task id: %v", taskId)
@@ -119,6 +123,7 @@ func (s TaskService) GetTaskById(taskId string) (types.TaskDTO, error) {
 }
 
 func (s TaskService) UpdateTask(dto types.TaskDTO) error {
+	slog.Info("Updating task", "taskDTO", dto)
 	if dto.Date != "today" && dto.Date != "" {
 		next, err := s.NextDate(time.Now().Format("20060102"), dto.Date, dto.Repeat)
 		if err != nil {
@@ -151,6 +156,7 @@ func (s TaskService) UpdateTask(dto types.TaskDTO) error {
 }
 
 func (s TaskService) DeleteTask(taskId string) error {
+	slog.Info("Deleting task by", "id", taskId)
 	id, err := strconv.Atoi(taskId)
 	if err != nil {
 		return fmt.Errorf("wrong format of task id: %v", taskId)
@@ -164,6 +170,7 @@ func (s TaskService) DeleteTask(taskId string) error {
 }
 
 func (s TaskService) SetNewDate(taskId string) error {
+	slog.Info("Setting new date for task", "id", taskId)
 	id, err := strconv.Atoi(taskId)
 	if err != nil {
 		return fmt.Errorf("wrong format of task id: %v", taskId)
@@ -176,18 +183,18 @@ func (s TaskService) SetNewDate(taskId string) error {
 	if len(task.Repeat) == 0 {
 		err = s.store.DeleteTask(int64(id))
 		return err
-	} else {
-		next, err := s.SetNextDate(task.Date, task.Repeat)
-		if err != nil {
-			slog.Error("failed to get next date.", "err", err)
-			return err
-		}
-		task.Date = next
-		err = s.store.UpdateTask(task)
-		if err != nil {
-			slog.Error("failed to set next date.", "err", err)
-			return err
-		}
+	}
+
+	next, err := s.SetNextDate(task.Date, task.Repeat)
+	if err != nil {
+		slog.Error("failed to get next date.", "err", err)
+		return err
+	}
+	task.Date = next
+	err = s.store.UpdateTask(task)
+	if err != nil {
+		slog.Error("failed to set next date.", "err", err)
+		return err
 	}
 	return nil
 }

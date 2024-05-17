@@ -26,6 +26,7 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 }
 
 func (s *APIServer) Run() {
+	slog.Info("Running server")
 	mux := http.NewServeMux()
 
 	taskStore := db.NewTaskRepository(s.db)
